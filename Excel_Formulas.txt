@@ -1,0 +1,6 @@
+***Search one cell against a set of cells and return true or false
+IF(ISERROR(VLOOKUP(A2,$C$2:$C$11, 1, FALSE)),FALSE,TRUE )
+
+****Search one cell against set of cells and return the adjacent cell value.
+
+=VLOOKUP(A10,Sheet2!A10:E405,5,FALSE)
