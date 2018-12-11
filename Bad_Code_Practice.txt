@@ -1,0 +1,22 @@
+>> Same column name in different tables but with different datatypes
+>>SELECT * in batch commands
+>>Nested Views (view should always refer to the base table)
+>>Joins between large views is not a good idea because Views do not support indexes
+>>Specify schema name in queries for tables 
+>>Insert INTO only in interactive queries 
+>>Use Cross join instead of FUll outer join to get both matched and unmatched rows. Speacially when rows are filtered in Where clause
+>>Complex conditionals in WHERE clause
+>>Mixing data types in joins and where clause
+>>A WHERE clause that references an unindexed column in the IN
+predicate causes a table scan and is therefore likely to run far more
+slowly than necessary
+>>An index cannot be used to find matches that start with a wildcard
+character (‘%’ or ‘_’ ), so queries are unlikely to run well on large
+tables because they’ll require table scans.
+>>functions should not be used in predicate or join columns of a query
+>>Use IS NULL or IS NOT NULL instead of == NULL or <>NULL
+>>You’re queries will often perform poorly if your WHERE clause
+includes a NOT IN predicate that references a subquery. The optimizer will likely have to use a table scan instead of an index
+seek, even if there is a suitable index. You can almost always get a better-performing query by using a left outer join and checking for a NULL in a suitable NOT NULLable column on the right-hand side.
+>>Using Non-SARGable expression in WHERE clause
+>>

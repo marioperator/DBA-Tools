@@ -1,0 +1,51 @@
+--********https://gallery.technet.microsoft.com/COPY-LOGINS-IN-SQL-SERVER-a15f60b5**********
+/*
+	Description    	:	Script to Copy Logins in 2005 and above sql server.
+	Parameters	    :	NONE.
+	Returns		    :	NA
+	Create date 	:	04/march/2016
+	Created By	    : 	SURESH PRUTHVIRAJ.
+	
+*/ 
+
+
+ IF ((SELECT convert(int,substring(@@VERSION,21,5)))<2008)
+
+       begin
+             set nocount on
+             declare @table table (query varchar(max))
+                     insert into @table 
+                                 select 'CREATE LOGIN '+QUOTENAME(name)+' FROM WINDOWS WITH DEFAULT_DATABASE='+QUOTENAME(default_database_name)+' ;'
+                                 from sys.server_principals where type in('U','G')
+
+                     insert into @table 
+                     select 'CREATE LOGIN ' + QUOTENAME(name)+
+                     ' WITH PASSWORD =' +CONVERT(varchar(max), LOGINPROPERTY(name, 'PasswordHash'),1 )+' HASHED ,SID='+'0x' + CAST('' as XML).value('xs:hexBinary(sql:column("sid"))', 'varchar(MAX)')+', default_database=['+default_database_name+'],'+
+                     case when is_policy_checked=0 then 'CHECK_POLICY = OFF' when is_policy_checked=1 then 'CHECK_POLICY = ON ' end+
+                     case when is_expiration_checked=0 then ' , CHECK_EXPIRATION = OFF ' when is_policy_checked=1 then ', CHECK_EXPIRATION = ON' end+
+                     '; '+case when is_disabled=1 then 'ALTER LOGIN ['+name+ '] DISABLE;' when is_disabled=0 then ' ' end
+                     from sys.sql_logins  where name not like '%##%' and name not like '%sa%'
+
+              select * from  @table 
+
+    end 
+
+
+   else 
+
+       begin
+             set nocount on
+             declare @table1 table (query varchar(max))
+                     insert into @table1
+                                 select 'CREATE LOGIN '+QUOTENAME(name)+' FROM WINDOWS WITH DEFAULT_DATABASE='+QUOTENAME(default_database_name)+' ;'
+                                 from sys.server_principals where type in('U','G')
+
+                     insert into @table1
+                                 select 'CREATE LOGIN ' + QUOTENAME(name)+
+                                 ' WITH PASSWORD =' +CONVERT(varchar(max), LOGINPROPERTY(name, 'PasswordHash'),1 )+' HASHED ,SID='+CONVERT(varchar(max), sid, 1)+', default_database=['+default_database_name+'],'+
+                                 case when is_policy_checked=0 then 'CHECK_POLICY = OFF' when is_policy_checked=1 then 'CHECK_POLICY = ON ' end+
+                                 case when is_expiration_checked=0 then ' , CHECK_EXPIRATION = OFF ' when is_policy_checked=1 then ', CHECK_EXPIRATION = ON' end+
+                                 '; '+case when is_disabled=1 then 'ALTER LOGIN ['+name+ '] DISABLE;' when is_disabled=0 then ' ' end
+                                 from sys.sql_logins where name not like '%##%' and name not like '%sa%'
+              select * from  @table1 
+      end

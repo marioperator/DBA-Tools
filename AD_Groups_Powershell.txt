@@ -1,0 +1,12 @@
+***Find all AD groups user is part of****
+
+Get-ADPrincipalGroupMembership -Identity d-hmindi| Format-Table -Property name
+
+
+***Get all AD users part of an AD group****
+
+Get-ADGroupMember -Identity "GR GG TDX USR SQL DBA Admins" -Recursive |
+Where objectclass -eq 'user' |
+Get-ADUser -Properties Displayname,Title,Department |
+Select DistinguishedName,samAccountName,Name,Displayname,Title,Department |
+Export-CSV c:\Hari\test.csv
