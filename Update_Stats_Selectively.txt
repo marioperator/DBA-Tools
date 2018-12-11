@@ -1,0 +1,69 @@
+--https://mikehillwig.com/2012/02/03/selectively-updating-statistics/
+-- Dynamic Database Statistics Update
+--
+-- Created: Mike Hillwig
+-- 01/26/2012
+--
+create table #statsmaint
+(databasename varchar(100),
+schemaname varchar(100),
+tablename varchar(100),
+indexname varchar(100),
+rowsupdated int,
+totalrows int)
+--- Stats calculation adapted from Kendra Little's script found at
+--- http://www.littlekendra.com/2009/04/21/how-stale-are-my-statistics/
+exec sp_msforeachdb 'use ?;
+INSERT #statsmaint
+SELECT DISTINCT
+''?''
+, s.name
+, tablename=object_name(i.object_id)
+,index_name=i.[name]
+, si.rowmodctr
+, si.rowcnt
+FROM sys.indexes i (nolock)
+JOIN sys.objects o (nolock) on
+i.object_id=o.object_id
+JOIN sys.schemas s (nolock) on
+o.schema_id = s.schema_id
+JOIN sys.sysindexes si (nolock) on
+i.object_id=si.id
+and i.index_id=si.indid
+where
+STATS_DATE(i.object_id, i.index_id) is not null
+and o.type <> ''S''
+and (si.rowmodctr > 1000 OR cast(si.rowmodctr as float) / cast (si.rowcnt+1 as float) > .05)
+and ''?'' <> ''tempdb''
+order by si.rowmodctr desc'
+DECLARE @v_dbname varchar(100)
+DECLARE @v_schemaname varchar(100)
+DECLARE @v_tablename varchar(100)
+DECLARE @v_indexname varchar(100)
+DECLARE @v_SQL varchar(1000)
+DECLARE @v_rowsupdated int
+DECLARE @v_percentscan varchar (10)
+DECLARE @v_totalrows int
+DECLARE c_statistics CURSOR FOR
+SELECT databasename, schemaname, tablename, indexname, rowsupdated, totalrows
+FROM #statsmaint
+OPEN c_statistics
+FETCH NEXT FROM c_statistics INTO @v_dbname, @v_schemaname, @v_tablename, @v_indexname, @v_rowsupdated, @v_totalrows
+WHILE (@@fetch_status <> -1)
+BEGIN
+IF (@@fetch_status <> -2)
+BEGIN
+SELECT @v_percentscan = '100' where @v_totalrows <= 50000
+SELECT @v_percentscan = '75' WHERE @v_totalrows BETWEEN 50000 AND 1000000
+SELECT @v_percentscan = '50' WHERE @v_totalrows BETWEEN 1000000 AND 10000000
+SELECT @v_percentscan = '25' where @v_totalrows > 10000000
+select @v_SQL = 'UPDATE STATISTICS ' + @v_dbname + '.' + @v_schemaname + '.' + @v_tablename + ' ' + @v_indexname + ' WITH SAMPLE ' + @v_percentscan + ' PERCENT 
+--' + cast (@v_rowsupdated as varchar) + ' OF ' + cast(@v_totalrows as varchar) + ' ROWS UPDATED. STARTED ' + cast(current_timestamp as varchar)
+print @v_sql
+exec (@v_sql)
+END
+FETCH NEXT FROM c_statistics INTO @v_dbname, @v_schemaname, @v_tablename, @v_indexname, @v_rowsupdated, @v_totalrows
+END
+CLOSE c_statistics
+DEALLOCATE c_statistics
+drop table #statsmaint

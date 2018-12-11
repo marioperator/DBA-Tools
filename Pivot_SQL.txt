@@ -1,0 +1,13 @@
+select * from 
+(
+select DATEPART(ww,rundate) as WK, LEFT(physical_name,1) as Drive, sum(FilesizeMB) as Size
+from DBA.Maintenance.DBFileGrowth
+where DATEPART(yy,rundate) = '2017'
+group by DATEPART(ww,rundate), LEFT(physical_name,1)
+) as r
+PIVOT
+(
+sum(size)
+for Drive in (D, L, I, Y)
+) as pvt
+

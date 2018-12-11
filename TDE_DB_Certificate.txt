@@ -1,0 +1,4 @@
+SELECT DB_NAME(dk.database_id) Name, enc.name from sys.dm_database_encryption_keys dk
+join	sys.certificates enc on dk.encryptor_thumbprint = enc.thumbprint
+ORDER BY DB_NAME(dk.database_id)
+	

@@ -1,0 +1,165 @@
+**********Instance Info**********
+SELECT
+  ServerProperty('BuildClrVersion') AS BuildClrVersion
+  ,ServerProperty('Collation') AS Collation
+  ,ServerProperty('CollationID') AS CollationID
+  ,ServerProperty('ComparisonStyle') AS ComparisonStyle
+  ,ServerProperty('ComputerNamePhysicalNetBIOS') AS ComputerNamePhysicalNetBIOS
+  ,ServerProperty('Edition') AS Edition
+  ,ServerProperty('EditionID') AS EditionID
+  ,ServerProperty('EngineEdition') AS EngineEdition
+  ,ServerProperty('InstanceName') AS InstanceName
+  ,ServerProperty('IsClustered') AS IsClustered
+  ,ServerProperty('IsFullTextInstalled') AS IsFullTextInstalled
+  ,ServerProperty('IsIntegratedSecurityOnly') AS IsIntegratedSecurityOnly
+  ,ServerProperty('IsSingleUser') AS IsSingleUser
+  ,ServerProperty('LCID') AS LCID
+  ,ServerProperty('LicenseType') AS LicenseType
+  ,ServerProperty('MachineName') AS MachineName
+  ,ServerProperty('NumLicenses') AS NumLicenses
+  ,ServerProperty('ProcessID') AS ProcessID
+  ,ServerProperty('ProductVersion') AS ProductVersion
+  ,ServerProperty('ProductLevel') AS ProductLevel
+  ,ServerProperty('ResourceLastUpdateDateTime') AS ResourceLastUpdateDateTime
+  ,ServerProperty('ResourceVersion') AS ResourceVersion
+  ,ServerProperty('ServerName') AS ServerName
+  ,ServerProperty('SqlCharSet') AS SqlCharSet
+  ,ServerProperty('SqlCharSetName') AS SqlCharSetName
+  ,ServerProperty('SqlSortOrder') AS SqlSortOrder
+  ,ServerProperty('SqlSortOrderName') AS SqlSortOrderName
+  ,ServerProperty('FilestreamConfiguredLevel') AS FilestreamConfiguredLevel
+  ,ServerProperty('FilestreamEffectiveLevel') AS FilestreamEffectiveLevel
+  ,ServerProperty('FilestreamShareName') AS FilestreamShareName
+
+*******Database Properties*******
+select 
+ --sysDB.database_id,
+ sysDB.Name as 'Database Name',
+ syslogin.Name as 'DB Owner',
+ sysDB.state_desc,
+ sysDB.recovery_model_desc,
+ sysDB.collation_name, 
+ --sysDB.user_access_desc,
+ sysDB.compatibility_level, 
+ sysDB.is_read_only,
+ sysDB.is_auto_create_stats_on,
+ sysDB.is_auto_update_stats_on,
+ sysDB.is_fulltext_enabled,
+ sysDB.is_trustworthy_on
+from sys.databases sysDB
+INNER JOIN sys.syslogins syslogin ON sysDB.owner_sid = syslogin.sid
+order by [Database Name]
+
+******Database sizes***********
+with fs
+as
+(
+    select database_id, type, size * 8.0 / 1024 size
+    from sys.master_files
+)
+select 
+    name,
+    (select sum(size) from fs where type = 0 and fs.database_id = db.database_id) DataFileSizeMB,
+    (select sum(size) from fs where type = 1 and fs.database_id = db.database_id) LogFileSizeMB
+from sys.databases db
+order by name
+
+***************CPU Info**********
+EXEC xp_instance_regread
+'HKEY_LOCAL_MACHINE',
+'HARDWARE\DESCRIPTION\System\CentralProcessor\0',
+'ProcessorNameString';
+
+*********Job Information**************
+SELECT 
+    [sJOB].[job_id] AS [JobID]
+    , [sJOB].[name] AS [JobName]
+    , [sDBP].[name] AS [JobOwner]
+    , [sCAT].[name] AS [JobCategory]
+    , [sJOB].[description] AS [JobDescription]
+    , CASE [sJOB].[enabled]
+        WHEN 1 THEN 'Yes'
+        WHEN 0 THEN 'No'
+      END AS [IsEnabled]
+    , [sJOB].[date_created] AS [JobCreatedOn]
+    , [sJOB].[date_modified] AS [JobLastModifiedOn]
+    , [sSVR].[name] AS [OriginatingServerName]
+    , [sJSTP].[step_id] AS [JobStartStepNo]
+    , [sJSTP].[step_name] AS [JobStartStepName]
+    , CASE
+        WHEN [sSCH].[schedule_uid] IS NULL THEN 'No'
+        ELSE 'Yes'
+      END AS [IsScheduled]
+    , [sSCH].[schedule_uid] AS [JobScheduleID]
+    , [sSCH].[name] AS [JobScheduleName]
+    , CASE [sJOB].[delete_level]
+        WHEN 0 THEN 'Never'
+        WHEN 1 THEN 'On Success'
+        WHEN 2 THEN 'On Failure'
+        WHEN 3 THEN 'On Completion'
+      END AS [JobDeletionCriterion]
+FROM
+    [msdb].[dbo].[sysjobs] AS [sJOB]
+    LEFT JOIN [msdb].[sys].[servers] AS [sSVR]
+        ON [sJOB].[originating_server_id] = [sSVR].[server_id]
+    LEFT JOIN [msdb].[dbo].[syscategories] AS [sCAT]
+        ON [sJOB].[category_id] = [sCAT].[category_id]
+    LEFT JOIN [msdb].[dbo].[sysjobsteps] AS [sJSTP]
+        ON [sJOB].[job_id] = [sJSTP].[job_id]
+        AND [sJOB].[start_step_id] = [sJSTP].[step_id]
+    LEFT JOIN [msdb].[sys].[database_principals] AS [sDBP]
+        ON [sJOB].[owner_sid] = [sDBP].[sid]
+    LEFT JOIN [msdb].[dbo].[sysjobschedules] AS [sJOBSCH]
+        ON [sJOB].[job_id] = [sJOBSCH].[job_id]
+    LEFT JOIN [msdb].[dbo].[sysschedules] AS [sSCH]
+        ON [sJOBSCH].[schedule_id] = [sSCH].[schedule_id]
+ORDER BY [JobName]
+
+**********Linked Server Info************
+	SELECT ss.server_id
+		  ,ss.name
+		  ,'Server ' = Case ss.Server_id
+						    when 0 then 'Current Server'
+						    else 'Remote Server'
+						    end
+		  ,ss.product
+		  ,ss.provider
+		  ,ss.catalog
+		  ,'Local Login ' = case sl.uses_self_credential
+						    when 1 then 'Uses Self Credentials'
+						    else ssp.name
+						    end
+		   ,'Remote Login Name' = sl.remote_name
+		   ,'RPC Out Enabled'    = case ss.is_rpc_out_enabled
+								   when 1 then 'True'
+								   else 'False'
+								   end
+		   ,'Data Access Enabled' = case ss.is_data_access_enabled
+								    when 1 then 'True'
+								    else 'False'
+								    end
+		   ,ss.modify_date
+	  FROM sys.Servers ss
+ LEFT JOIN sys.linked_logins sl
+	    ON ss.server_id = sl.server_id
+ LEFT JOIN sys.server_principals ssp
+        ON ssp.principal_id = sl.local_principal_id
+
+*******SSIS Package Information********
+use msdb
+go
+select Name, Description, SUSER_NAME(ownersid) AS Owner from sysssispackages 
+
+*******Cache Plans size*********
+SELECT objtype AS [CacheType]
+ , count_big(*) AS [Total Plans]
+ , sum(cast(size_in_bytes as decimal(18,2)))/1024/1024 AS [Total MBs]
+ , avg(usecounts) AS [Avg Use Count]
+ , sum(cast((CASE WHEN usecounts = 1 THEN size_in_bytes ELSE 0 END)
+as decimal(18,2)))/1024/1024 AS [Total MBs - USE Count 1]
+ , sum(CASE WHEN usecounts = 1 THEN 1 ELSE 0 END)
+AS [Total Plans - USE Count 1]
+FROM sys.dm_exec_cached_plans
+GROUP BY objtype
+ORDER BY [Total MBs - USE Count 1] DESC
+

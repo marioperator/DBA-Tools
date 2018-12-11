@@ -1,0 +1,33 @@
+****SQL03****
+--select * from sys.certificates
+BACKUP CERTIFICATE ECollectionsCert
+TO FILE = 'S:\Keys\ECollectionsCert.cer'  
+WITH PRIVATE KEY   
+(  
+    FILE = 'S:\Keys\ECollectionsCert_key.pvk',  
+    ENCRYPTION BY PASSWORD = 'p33r@b0ss4u'  
+);  
+
+--select * from sys.certificates
+BACKUP CERTIFICATE TIXCert   
+TO FILE = 'S:\Keys\TIXCert.cer'  
+WITH PRIVATE KEY   
+(  
+    FILE = 'S:\Keys\TIXCert_key.pvk',  
+    ENCRYPTION BY PASSWORD = 'p33r@b0ss4u'  
+);  
+
+********SQL0003********
+/* Create Master Key */
+CREATE MASTER KEY
+  ENCRYPTION BY PASSWORD = 'R@1nyd@Y1610';
+GO 
+
+/* Restore Certificate */
+
+CREATE CERTIFICATE ECollectionsCert
+  FROM FILE = 'S:\Keys\ECollectionsCert.cer'
+  WITH PRIVATE KEY ( 
+    FILE = N'S:\Keys\ECollectionsCert_key.pvk',
+ DECRYPTION BY PASSWORD = 'p33r@b0ss4u'
+  );

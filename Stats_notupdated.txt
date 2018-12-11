@@ -1,0 +1,30 @@
+/* Get list of all statistics of all tables of a database that are not updated in last 7 days 
+   and which have rows modified above threshold value */
+SELECT OBJECT_NAME(s.object_id), s.name, stp.last_updated, stp.rows, stp.modification_counter, CAST(SQRT(1000 * stp.rows) as decimal(18,2)) AS Threshold_Rows
+FROM sys.stats s
+CROSS APPLY
+	sys.dm_db_stats_properties(s.object_id, s.stats_id) AS stp
+WHERE OBJECTPROPERTY(s.OBJECT_ID, 'IsUserTable')=1 AND
+		stp.last_updated IS NOT NULL AND 
+		modification_counter > SQRT(1000 * stp.rows) AND
+		DATEDIFF(d, last_updated, GETDATE()) > 7
+ORDER BY last_updated
+
+
+/* Below script for all databases */
+
+IF OBJECT_ID('tempdb..#outdatedstats') iS NOT NULL
+	DROP TABLE #outdatedstats
+
+CREATE TABLE #outdatedstats (Dbname nvarchar(200), TableName nvarchar(400), Statname nvarchar(400), lastUpdated datetime, Rowcnt bigint, Rows_modified bigint, Threshold float)
+
+INSERT INTO #outdatedstats
+EXEC sp_msForEachdb 'USE [?];
+SELECT DB_NAME(), OBJECT_NAME(s.object_id), s.name, stp.last_updated, stp.rows, stp.modification_counter, CAST(SQRT(1000 * stp.rows) as decimal(18,2)) AS Threshold_Rows FROM sys.stats s
+		 CROSS APPLY sys.dm_db_stats_properties(s.object_id, s.stats_id) AS stp WHERE OBJECTPROPERTY(s.OBJECT_ID, ''IsUserTable'')=1 AND stp.last_updated IS NOT NULL AND modification_counter > SQRT(1000 * stp.rows) AND DATEDIFF(d, last_updated, GETDATE()) > 7'
+
+--INSERT INTO DBA.dbo.OutdatedStats
+SELECT * FROM #outdatedstats WHERE dbname not in ('master','msdb','tempdb','DBA','distribution')
+
+DROP TABLE #outdatedstats
+

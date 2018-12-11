@@ -1,0 +1,19 @@
+
+1. Identify TempDB Usage
+http://www.sqlservercentral.com/scripts/tempdb/146629/
+
+2. CPU Utilization by Database
+http://www.sqlservercentral.com/scripts/CPU+Utilization+by+database+and+SQL+Query/145875/
+
+3.Monitor SQL Server and Service and send emails if down.
+http://www.sqlservercentral.com/scripts/Monitor+SQL+Server+and+Service/127705/
+
+4.DB Memory / RAM Consumption
+http://www.sqlservercentral.com/scripts/db+memory+consumption/118987/
+
+5. Whats running now
+http://www.sqlservercentral.com/scripts/wait+statistics/118732/
+
+6. Automatically Capturing SQL Server Performance Metrics
+http://www.databasejournal.com/features/mssql/automatically-capturing-sql-server-performance-metrics.html
+
