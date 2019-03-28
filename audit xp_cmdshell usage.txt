@@ -1,0 +1,16 @@
+
+USE [master]
+GO
+
+CREATE SERVER AUDIT [cmdshell-20190117]
+TO FILE 
+(   FILEPATH = N'C:\DBA\Audits\' )
+WHERE object_name = 'xp_cmdshell';
+GO
+
+CREATE SERVER AUDIT SPECIFICATION [Audit-cmdshell]
+FOR SERVER AUDIT [cmdshell-20190117
+ADD (SCHEMA_OBJECT_ACCESS_GROUP);
+GO
+
+-- Now go enable audit 
