@@ -3,10 +3,13 @@
 Get-ADPrincipalGroupMembership -Identity d-hmindi| Format-Table -Property name
 
 
-***Get all AD users part of an AD group****
+Below queries AD for members of a group
+=============================================
+ 
+ Get-ADGroupMember -Identity 'GR GG TDX RTS SQL RM Operations' -Recursive
 
-Get-ADGroupMember -Identity "GR GG TDX USR SQL DBA Admins" -Recursive |
-Where objectclass -eq 'user' |
-Get-ADUser -Properties Displayname,Title,Department |
-Select DistinguishedName,samAccountName,Name,Displayname,Title,Department |
-Export-CSV c:\Hari\test.csv
+-- To A Grid View
+ Get-ADGroupMember -Identity 'GR GG TDX DB USR IT Developers' | Select-Object samaccountname, name, objectClass,distinguishedName | Out-GridView
+ 
+-- To A Csv
+ Get-ADGroupMember -Identity 'GR GG TDX RTS SQL RM Operations' | Select-Object samaccountname, name, objectClass,distinguishedName | Export-CSV -Path “c:\temp\adgroupmembers.csv” 
